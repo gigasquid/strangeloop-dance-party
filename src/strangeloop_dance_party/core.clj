@@ -29,7 +29,8 @@
 
 ; start a server and create a client to talk with it
 (def server (osc-server PORT))
-(def beat-num (atom 0))
+(def incoming-data (atom {}))
+
 
 
 
@@ -40,9 +41,11 @@
 (def BLUE 0x0000FF)
 (def PURPLE 0xFF00FF)
 
+
 (def sphero-action-list (atom  (map commands/colour [RED YELLOW BLUE PURPLE])))
 (def sphero-action-counter (atom 0))
 (def sphero-beat-mod (atom 1))
+
 
 (defn change-sphero-beat-mod [num]
   (reset! sphero-beat-mod num))
@@ -52,14 +55,15 @@
   (reset! sphero-action-counter 0))
 
 (defn stop! []
-  (set-sphero-action-list! [])
+  (change-sphero-moves [])
   (commands/execute sphero (commands/roll 0 0)))
 
 
 (defn do-action? []
-  (and
-   (pos? (count @sphero-action-list))
-   (zero? (mod @beat-num @sphero-beat-mod))))
+  (let [beat-num (get @incoming-data "/beat")]
+   (and
+    (pos? (count @sphero-action-list))
+    (zero? (mod beat-num @sphero-beat-mod)))))
 
 
 (defn sphero-action []
@@ -75,6 +79,7 @@
 
 
 (sphero-action)
+(do-action?)
 (stop!)
 
 (change-sphero-beat-mod 4)
@@ -89,3 +94,18 @@
                                      (swap! beat-num inc)
                                      (sphero-action)
                                      (println " hi MMSG: " msg)))
+
+(defn update-incoming-data [key val]
+  (swap! incoming-data assoc key val))
+
+(osc-handle server "/beat" (fn [msg]
+                             (update-incoming-data (:path msg) (first (:args msg)))
+                             (println " hi MMSG: " msg)
+                             (println "In beat" (pr-str @incoming-data))
+                             (println (get @incoming-data "/beat"))
+                             (sphero-action)))
+
+(osc-handle server "/amp" (fn [msg]
+                             (update-incoming-data (:path msg) (first (:args msg)))
+                             (println "In amp " (pr-str @incoming-data))
+                             (println (get @incoming-data "/amp"))))
