@@ -10,7 +10,7 @@
 
   ;; ls /dev/tty.Sphero*
  ;; init the sphero
-  (def sphero (core/connect "/dev/tty.Sphero-RBR-AMP-SPP-2"))
+  (def sphero (core/connect "/dev/tty.Sphero-RBR-AMP-SPP"))
 
   (comment  (core/disconnect sphero))
 
@@ -42,9 +42,10 @@
 (def PURPLE 0xFF00FF)
 
 
-(def sphero-action-list (atom  (map commands/colour [RED YELLOW BLUE PURPLE])))
+(def sphero-action-list (atom []))
 (def sphero-action-counter (atom 0))
 (def sphero-beat-mod (atom 1))
+(def sphero-color-channels (atom {:red true :green false :blue false}))
 
 
 (defn change-sphero-beat-mod [num]
@@ -54,10 +55,29 @@
   (reset! sphero-action-list action-list)
   (reset! sphero-action-counter 0))
 
+(defn change-sphero-color-channels [colormap]
+  (reset! sphero-color-channels colormap))
+
 (defn stop! []
   (change-sphero-moves [])
   (commands/execute sphero (commands/roll 0 0)))
 
+
+(defn rgb->hex [r g b]
+  (Long/decode (str "0x"
+                (apply str (map #(format "%02x" %) [r g b])))))
+
+(defn change-color [amplitude]
+  "given and amplitude between 0-1 changes the color according
+   to what color channels are open"
+  (let [color-int (int (* 255 amplitude))
+        r (if (:red @sphero-color-channels) color-int 0)
+        g (if (:green @sphero-color-channels) color-int 0)
+        b (if (:blue @sphero-color-channels) color-int 0)]
+    (println [r g b])
+    (commands/execute sphero (commands/colour (rgb->hex r g b)))))
+
+(change-color 0.5)
 
 (defn do-action? []
   (let [beat-num (get @incoming-data "/beat")]
@@ -78,22 +98,20 @@
     (catch Exception e (println "Sphero errror" (.getMessage e) (pr-str (.getStackTrace e))))))
 
 
-(sphero-action)
-(do-action?)
-(stop!)
+(comment 
+  (sphero-action)
+  (do-action?)
+  (stop!)
 
-(change-sphero-beat-mod 4)
-(change-sphero-moves (map commands/colour [RED YELLOW BLUE PURPLE]))
-(change-sphero-moves [(commands/roll 0x4B 0) (commands/roll 0x4B 180)])
-(change-sphero-moves [(commands/roll 0x4B 90) (commands/roll 0x4B 270)])
+  (change-sphero-color-channels {:red true :green true :blue true})
+  (change-sphero-beat-mod 4)
+  (change-sphero-moves (map commands/colour [RED YELLOW BLUE PURPLE]))
+  (change-sphero-moves [(commands/roll 0x4B 0) (commands/roll 0x4B 180)])
+  (change-sphero-moves [(commands/roll 0x4B 90) (commands/roll 0x4B 270)]))
 
 ; Register a handler function for the /test OSC address
 ; The handler takes a message map with the following keys:
 ;   [:src-host, :src-port, :path, :type-tag, :args]
-(osc-handle server "/meta-ex/beat" (fn [msg]
-                                     (swap! beat-num inc)
-                                     (sphero-action)
-                                     (println " hi MMSG: " msg)))
 
 (defn update-incoming-data [key val]
   (swap! incoming-data assoc key val))
@@ -108,4 +126,8 @@
 (osc-handle server "/amp" (fn [msg]
                              (update-incoming-data (:path msg) (first (:args msg)))
                              (println "In amp " (pr-str @incoming-data))
-                             (println (get @incoming-data "/amp"))))
+                             (let [amp (get @incoming-data "/amp")]
+                               (println (get @incoming-data "/amp"))
+                               (change-color amp))))
+
+
