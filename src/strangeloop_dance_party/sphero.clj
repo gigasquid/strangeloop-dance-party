@@ -2,26 +2,6 @@
   (:require [ellipso.core :as core]
             [ellipso.commands :as commands]))
 
-(comment
-  ;; all the initialization  by hand goes here....
-  ;; crosss your fingers and hope everyone connects okay
-
-
-  ;; ls /dev/tty.Sphero*
- ;; init the sphero
-  (def sphero (core/connect "/dev/tty.Sphero-RBR-AMP-SPP"))
-
-  (comment  (core/disconnect sphero))
-
-  (commands/execute sphero (commands/colour 0xFF0000)) ;;red
-  (commands/execute sphero (commands/colour 0xFF8000))
-  (commands/execute sphero (commands/roll 0 0))
-  (commands/execute sphero (commands/roll 0x4B 0))
-
-  (comment  (core/disconnect sphero))
-
-  )
-
 
 (def RED 0xFF0000)
 (def YELLOW 0xFF8000)

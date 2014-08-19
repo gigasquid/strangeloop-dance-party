@@ -4,6 +4,16 @@
             [ellipso.commands :as commands]
             [strangeloop-dance-party.sphero :as sphero]))
 
+;;This is the main file to work on for the live coding
+;; first comment section is the stuff needed to initially connect to
+;; all the robots
+
+;; The oschandle stuff is how it listens for events.
+;; To kick off the test simulation harness call bin/st-osc.tb 4249
+
+;; Finally in the last comment section is the live coding bit to
+;; give the robots actions and can the responses to the live music input
+
 (comment
   ;; all the initialization  by hand goes here....
   ;; crosss your fingers and hope everyone connects okay
