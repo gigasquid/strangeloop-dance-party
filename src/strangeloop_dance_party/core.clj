@@ -2,7 +2,8 @@
   (:require [overtone.osc :refer :all]
             [ellipso.core :as core]
             [ellipso.commands :as commands]
-            [strangeloop-dance-party.sphero :as sphero]))
+            [strangeloop-dance-party.sphero :as sphero]
+            [strangeloop-dance-party.roomba :as roomba]))
 
 ;;This is the main file to work on for the live coding
 ;; first comment section is the stuff needed to initially connect to
@@ -32,10 +33,32 @@
 
   (comment  (core/disconnect sphero))
 
+
+  ;;; roomba
+   (def roomba (RoombaCommSerial. ))
+
+  ;;Find your port for your Roomba
+  (map println (.listPorts roomba))
+
+  (def portname "/dev/tty.FireFly-943A-SPP")
+  (.connect roomba portname)
+  (.startup roomba)  ;;puts Roomba in safe Mode
+  ;; What mode is Roomba in?
+  (.modeAsString roomba)
+  (.control roomba)
+  (.updateSensors roomba) ; returns true if you are connected
+  (.playNote roomba 72 40)
+  (roomba/stop! roomba)
+  (roomba/spin-right roomba 0.2)
+  (spin-left roomba 0.2)
+  (comment (.disconnect roomba))
+
+  (def roomba roomba/roomba)
   )
 
 
 (declare sphero)
+(declare roomba)
 (defonce PORT 4249)
 
 ; start a server and create a client to talk with it
@@ -57,18 +80,24 @@
                              (println (get @incoming-data "/beat"))
                              (let [beat (get @incoming-data "/beat")]
                                (println (get @incoming-data "/beat"))
-                               (sphero/sphero-action sphero beat))))
+                              ; (sphero/sphero-action sphero beat)
+                               (roomba/roomba-action roomba beat))))
 
 (osc-handle server "/amp" (fn [msg]
                              (update-incoming-data (:path msg) (first (:args msg)))
                              (println "In amp " (pr-str @incoming-data))
                              (let [amp (get @incoming-data "/amp")]
                                (println (get @incoming-data "/amp"))
-                               (sphero/change-color sphero amp))))
+                               ;(sphero/change-color sphero amp)
+                               )))
 
 
 
 ;;;; live coding
+
+(defn current-amplitude []
+  (get @incoming-data "/amp"))
+
 
 (comment
 
@@ -85,5 +114,20 @@
   (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 90)
                                (commands/roll (sphero/speed->hex 100) 270)])
   (sphero/stop! sphero)
+
+  ;;; roomba
+
+
+  (roomba/change-roomba-beat-mod 4)
+
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/spin-left roomba (current-amplitude)))
+                               (fn [roomba] (roomba/spin-right roomba (current-amplitude)))])
+
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/forward roomba (current-amplitude)))
+                               (fn [roomba] (roomba/backward roomba (current-amplitude)))])
+
+
+  (roomba/stop! roomba)
+
   )
 
