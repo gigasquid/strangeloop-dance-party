@@ -7,4 +7,6 @@
                  [overtone/osc-clj "0.9.0"]
                  [ellipso "0.1.2-SNAPSHOT"]
                  [roombacomm "0.96"]
-                 [rxtx22 "1.0.6"]])
+                 [rxtx22 "1.0.6"]
+                 [serial-port "1.1.2"]
+                 [clj-drone "0.1.8"]])
