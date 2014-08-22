@@ -77,10 +77,10 @@
 (defn send-command-from-queue []
   (do (println "command queue is " @command-queue)
       (let [command (or (first @command-queue) default-command)]
-        (println "Sending ..." command)
+       ; (println "Sending ..." command)
         (reset! command-queue (rest @command-queue))
         (send-robot command)
-        (Thread/sleep 50))))
+        (Thread/sleep 33))))
 
 (defn add-command [command]
   (swap! command-queue conj command))
@@ -151,17 +151,79 @@
 (defn start-communicator []
   (send robot-agent (fn [_]
                       (while @talk-on?
-                        (send-command-from-queue)
-                        (Thread/sleep 300)))))
+                        (send-command-from-queue)))))
 
 ;;; moves for the beat and amplitude
+
+;;; need to be in translate-mode
 
 (defn up-down [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (let [num-moves (int (+ (* amplitude 190) 10))]
-    (map #(move % CENTER CENTER CENTER) (range 10 200 100))
-    ))
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move % CENTER CENTER CENTER) move-range)))
+
+
+(defn twist-right-left [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move CENTER % CENTER CENTER) move-range)))
+
+(defn shift-forward-backwards [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move CENTER CENTER % CENTER) move-range)))
+
+(defn shift-left-right [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move CENTER CENTER CENTER %) move-range)))
+
+
+(defn wave1 [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move % % CENTER CENTER) move-range)))
+
+(defn wave2 [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move % CENTER % CENTER) move-range)))
+
+
+(defn wave3 [amplitude]
+  "maps a set of moves through a range with an amplitude from 0-1
+   -- if a move set is being peformed then don't send it"
+  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (let [num-moves (int  (* amplitude 10))
+        move-range (conj (vec (range 10 200 num-moves)) 200)]
+    (println "num moves " num-moves " move-range " move-range)
+    (map #(move % CENTER % CENTER) move-range)))
+
+;;;;
 
 (agent-errors robot-agent)
 (comment
@@ -184,10 +246,21 @@
   (sit-up)
   (change-mode :translate-mode)
 
+  (up-down 0.5)
+  (twist-right-left 0.5)
+  (shift-forward-backwards 0.5)
+  (shift-left-right 0.5)
+  (wave1 0.5)
+  (wave2 0.5)
+  (wave3 0.5)
+  
+
+  
   ;; up down  range between 10 and 200 safter
   ;; 20 is slow mave through range
   ;; 100 is faster move through the range
-  (map #(move % CENTER CENTER CENTER) (range 10 200 20))
+  (map #(move % CENTER CENTER CENTER) (range 10 200 10))
+  (map #(move % CENTER CENTER CENTER) (reverse (range 10 200 20)))
 
   ;; up down
   (map #(move % CENTER CENTER CENTER) (range 10 200 100))
