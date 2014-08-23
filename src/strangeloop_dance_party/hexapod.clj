@@ -1,7 +1,6 @@
 (ns strangeloop-dance-party.hexapod
   (:require [serial-port :as serial]))
 
-(def modes [:walk-mode :translate-mode :rotate-mode :single-leg-mode])
 (def LT-button 128)
 (def RT-button 64)
 (def L6-button 32)
@@ -93,10 +92,27 @@
 (defn change-mode [mode-value]
   "Change modes (left-top-button) until we reach the mode-value
      {0 :walk-mode 1 :translate-mode 2 :rotate-mode 3 :single-leg-mode}"
+
+  (assert (= 1 (count (filter #(= % mode-value) (vals modes)))))
   (when-not (= mode-value (get modes @current-mode))
+    (println "change")
     (add-command (build-packet CENTER CENTER CENTER CENTER LT-button))
-    (swap! current-mode #(mod (inc %) 4))
-    (change-mode mode-value)))
+    ;; sent in-between to clear out repeats
+    (Thread/sleep 30)
+    (add-command (build-packet CENTER CENTER CENTER CENTER 0))
+    (swap! current-mode #(mod (inc %) 5))
+    (recur mode-value)))
+
+
+;@current-mode
+;modes
+;(change-mode :walk-mode)
+;(change-mode :translate-mode)
+
+(defn toggle-mode []
+  "one time command to toggle the mode"
+  (add-command (build-packet CENTER CENTER CENTER CENTER LT-button))
+  (swap! current-mode #(mod (inc %) 5)))
 
 (defn good-move-range? [x]
   (if (and (< 0 x)
@@ -324,29 +340,22 @@
   (reset! talk-on? false)
 
 
-  (change-mode :rotate-mode)
+  (change-mode :walk-mode)
+
   @current-mode
-  
-  (repeat 5  (walk-forward 20))
-  @talk-on
-  @command-queue
-  (reset! talk-on false)
+  (toggle-mode)
 
-  (reset! talk-on false)
+  (dotimes [x 80]
+    (walk-forward 75))
 
+  (dotimes [x 80]
+    (walk-backwards 75))
 
-  
-  (sit-up)
-  (walk-forward 20)
-  (walk-backwards 10)
-  (walk-right 10)
-  (walk-left 10)
-  (turn-right 10)
-  (turn-left 10)
+  (dotimes [x 80]
+    (walk-right 75))
 
-  (stop)
-
-  (good-bye)
+  (dotimes [x 80]
+    (walk-left 75))
 
   )
 

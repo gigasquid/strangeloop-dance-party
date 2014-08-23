@@ -178,6 +178,7 @@
 
 
   (hexapod/toggle-mode)
+  @hexapod/current-mode
   (hexapod/change-hexapod-beat-mod 6)
   (hexapod/change-hexapod-moves [(fn [] (dotimes [x 80] (hexapod/walk-forward 75)))
                                  (fn [] (dotimes [x 80] (hexapod/walk-backwards 75)))
