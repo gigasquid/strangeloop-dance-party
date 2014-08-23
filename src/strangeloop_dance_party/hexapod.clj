@@ -37,7 +37,7 @@
    0
    (checksum [r-vert r-horz l-vert l-horz buttons])])
 
-(defn send-robot [packet]
+(defn send-robot [port packet]
   (serial/write port (vec->bytes packet)))
 
 (defn good-range? [speed]
@@ -74,12 +74,12 @@
 ;;middle at 128
 
 
-(defn send-command-from-queue []
+(defn send-command-from-queue [port]
   (do (println "command queue is " @command-queue)
       (let [command (or (first @command-queue) default-command)]
        ; (println "Sending ..." command)
         (reset! command-queue (rest @command-queue))
-        (send-robot command)
+        (send-robot port command)
         (Thread/sleep 33))))
 
 (defn add-command [command]
@@ -148,10 +148,10 @@
 (def talk-on? (atom false))
 (def robot-agent (agent []))
 
-(defn start-communicator []
+(defn start-communicator [port]
   (send robot-agent (fn [_]
                       (while @talk-on?
-                        (send-command-from-queue)))))
+                        (send-command-from-queue port)))))
 
 ;;; moves for the beat and amplitude
 
@@ -160,17 +160,17 @@
 (defn up-down [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert  (and (<= 0 amplitude) (>= 1 amplitude)))
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move % CENTER CENTER CENTER) move-range)))
+    (doall (map #(move % CENTER CENTER CENTER) move-range))))
 
 
 (defn twist-right-left [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
@@ -179,7 +179,7 @@
 (defn shift-forward-backwards [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
@@ -188,7 +188,7 @@
 (defn shift-left-right [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
@@ -198,7 +198,7 @@
 (defn wave1 [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
@@ -207,7 +207,7 @@
 (defn wave2 [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
@@ -217,13 +217,55 @@
 (defn wave3 [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
-  (assert (and (pos? amplitude) (>= 1 amplitude)) )
+  (assert (and (<= 0 amplitude) (>= 1 amplitude)) )
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
     (map #(move % CENTER % CENTER) move-range)))
 
 ;;;;
+
+;;; control stuff for the music
+
+(def hexapod-action-list (atom []))
+(def hexapod-action-counter (atom 0))
+(def hexapod-beat-mod (atom 1))
+
+
+(defn configure-hexapod [port]
+  (def port port))
+
+(defn change-hexapod-beat-mod [num]
+  (reset! hexapod-beat-mod num))
+
+(defn change-hexapod-moves [action-list]
+  (reset! hexapod-action-list action-list)
+  (reset! hexapod-action-counter 0))
+
+
+(defn stop! []
+ (stop))
+
+(defn do-action? [beat-num]
+  (and
+   (pos? (count @hexapod-action-list))
+   (zero? (mod beat-num @hexapod-beat-mod))
+   (and (> 2 (count @command-queue)))))
+
+
+(defn hexapod-action [beat]
+  (try
+    (when (do-action? beat)
+     (let [idx (mod @hexapod-action-counter (count @hexapod-action-list))
+           _ (println idx)
+           action (nth @hexapod-action-list idx)
+           _ (println action)]
+       (do (action))
+       (swap! hexapod-action-counter inc)))
+    (catch Exception e (println "Hexapod errror" (.getMessage e) (pr-str (.getStackTrace e))))))
+
+
+
 
 (agent-errors robot-agent)
 (comment
@@ -237,7 +279,7 @@
 
 
   (reset! talk-on? true)
-  (start-communicator)
+  (start-communicator port)
 
   (comment (reset! talk-on? false))
 

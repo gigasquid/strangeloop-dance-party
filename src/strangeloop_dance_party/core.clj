@@ -2,8 +2,10 @@
   (:require [overtone.osc :refer :all]
             [ellipso.core :as core]
             [ellipso.commands :as commands]
+            [serial-port :as serial]
             [strangeloop-dance-party.sphero :as sphero]
-            [strangeloop-dance-party.roomba :as roomba]))
+            [strangeloop-dance-party.roomba :as roomba]
+            [strangeloop-dance-party.hexapod :as hexapod]))
 
 ;;This is the main file to work on for the live coding
 ;; first comment section is the stuff needed to initially connect to
@@ -53,7 +55,26 @@
   (spin-left roomba 0.2)
   (comment (.disconnect roomba))
 
-  (def roomba roomba/roomba)
+  ;(def roomba roomba/roomba)
+
+
+  ;;; Hexapod
+  ; Use this command to see what port your serial port
+  ;; is assinged to
+  (serial/list-ports)
+
+  ;; replace the USB0 with whater it shows
+  (def port (serial/open "/dev/tty.usbserial-A60205ME" 38400))
+
+  (reset! hexapod/talk-on? true)
+  (hexapod/start-communicator port)
+
+  (comment (reset! hexapod/talk-on? false))
+  (comment (hexapod/good-bye))
+
+  (hexapod/sit-up)
+  (hexapod/change-mode :translate-mode)
+  (hexapod/up-down 0.5)
   )
 
 
@@ -62,13 +83,17 @@
 (defonce PORT 4249)
 
 ; start a server and create a client to talk with it
-(defonce server (osc-server PORT))
+(def server (osc-server PORT))
 (def incoming-data (atom {}))
 
 
 ; Register a handler function for the /test OSC address
 ; The handler takes a message map with the following keys:
 ;   [:src-host, :src-port, :path, :type-tag, :args]
+
+
+(defn current-amplitude []
+  (get @incoming-data "/amp"))
 
 (defn update-incoming-data [key val]
   (swap! incoming-data assoc key val))
@@ -81,7 +106,9 @@
                              (let [beat (get @incoming-data "/beat")]
                                (println (get @incoming-data "/beat"))
                               ; (sphero/sphero-action sphero beat)
-                               (roomba/roomba-action roomba beat))))
+                              ; (roomba/roomba-action roomba beat)
+                               (hexapod/hexapod-action beat)
+                               )))
 
 (osc-handle server "/amp" (fn [msg]
                              (update-incoming-data (:path msg) (first (:args msg)))
@@ -94,9 +121,6 @@
 
 
 ;;;; live coding
-
-(defn current-amplitude []
-  (get @incoming-data "/amp"))
 
 
 (comment
@@ -128,6 +152,23 @@
 
 
   (roomba/stop! roomba)
+
+  ;;;
+
+  (hexapod/change-hexapod-beat-mod 4)
+    (hexapod/change-hexapod-moves [(fn [] (println "hey"))])
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))])
+
+    (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down (current-amplitude)))])
+
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))
+                                 (fn [] (hexapod/twist-right-left 0.5))
+                                 (fn [] (hexapod/shift-forward-backwards 0.5))
+                                 (fn [] (hexapod/shift-left-right 0.5))])
+  
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/wave1 (current-amplitude)))
+                                 (fn [] (hexapod/wave2 (current-amplitude)))
+                                 (fn [] (hexapod/wave3 (current-amplitude)))])
 
   )
 
