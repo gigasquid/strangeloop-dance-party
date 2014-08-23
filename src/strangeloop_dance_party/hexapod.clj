@@ -166,7 +166,6 @@
     (println "num moves " num-moves " move-range " move-range)
     (doall (map #(move % CENTER CENTER CENTER) move-range))))
 
-
 (defn twist-right-left [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
    -- if a move set is being peformed then don't send it"
@@ -174,7 +173,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move CENTER % CENTER CENTER) move-range)))
+    (doall (map #(move CENTER % CENTER CENTER) move-range))))
 
 (defn shift-forward-backwards [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
@@ -183,7 +182,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move CENTER CENTER % CENTER) move-range)))
+    (doall (map #(move CENTER CENTER % CENTER) move-range))))
 
 (defn shift-left-right [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
@@ -192,7 +191,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move CENTER CENTER CENTER %) move-range)))
+    (doall (map #(move CENTER CENTER CENTER %) move-range))))
 
 
 (defn wave1 [amplitude]
@@ -202,7 +201,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move % % CENTER CENTER) move-range)))
+    (doall (map #(move % % CENTER CENTER) move-range))))
 
 (defn wave2 [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
@@ -211,8 +210,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move % CENTER % CENTER) move-range)))
-
+    (doall (map #(move % CENTER % CENTER) move-range))))
 
 (defn wave3 [amplitude]
   "maps a set of moves through a range with an amplitude from 0-1
@@ -221,7 +219,7 @@
   (let [num-moves (int  (* amplitude 10))
         move-range (conj (vec (range 10 200 num-moves)) 200)]
     (println "num moves " num-moves " move-range " move-range)
-    (map #(move % CENTER % CENTER) move-range)))
+    (doall (map #(move % CENTER CENTER %) move-range))))
 
 ;;;;
 

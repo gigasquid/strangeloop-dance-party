@@ -155,20 +155,20 @@
 
   ;;;
 
-  (hexapod/change-hexapod-beat-mod 4)
+  (hexapod/change-hexapod-beat-mod 6)
     (hexapod/change-hexapod-moves [(fn [] (println "hey"))])
   (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))])
 
-    (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down (current-amplitude)))])
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down (current-amplitude)))])
 
   (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))
                                  (fn [] (hexapod/twist-right-left 0.5))
                                  (fn [] (hexapod/shift-forward-backwards 0.5))
                                  (fn [] (hexapod/shift-left-right 0.5))])
   
-  (hexapod/change-hexapod-moves [(fn [] (hexapod/wave1 (current-amplitude)))
-                                 (fn [] (hexapod/wave2 (current-amplitude)))
-                                 (fn [] (hexapod/wave3 (current-amplitude)))])
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/wave1 0.5))
+                                 (fn [] (hexapod/wave2 0.5))
+                                 (fn [] (hexapod/wave3 0.5))])
 
   )
 
