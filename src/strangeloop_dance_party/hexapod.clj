@@ -74,9 +74,9 @@
 
 
 (defn send-command-from-queue [port]
-  (do (println "command queue is " @command-queue)
+  (do ;(println "command queue is " @command-queue)
       (let [command (or (first @command-queue) default-command)]
-       ; (println "Sending ..." command)
+       (println "Sending ..." command)
         (reset! command-queue (rest @command-queue))
         (send-robot port command)
         (Thread/sleep 33))))
@@ -271,9 +271,7 @@
   (try
     (when (do-action? beat)
      (let [idx (mod @hexapod-action-counter (count @hexapod-action-list))
-           _ (println idx)
-           action (nth @hexapod-action-list idx)
-           _ (println action)]
+           action (nth @hexapod-action-list idx)]
        (do (action))
        (swap! hexapod-action-counter inc)))
     (catch Exception e (println "Hexapod errror" (.getMessage e) (pr-str (.getStackTrace e))))))

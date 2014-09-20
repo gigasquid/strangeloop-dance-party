@@ -1,11 +1,13 @@
 (ns strangeloop-dance-party.core
+  (:import  roombacomm.RoombaCommSerial)
   (:require [overtone.osc :refer :all]
             [ellipso.core :as core]
             [ellipso.commands :as commands]
             [serial-port :as serial]
             [strangeloop-dance-party.sphero :as sphero]
             [strangeloop-dance-party.roomba :as roomba]
-            [strangeloop-dance-party.hexapod :as hexapod]))
+            [strangeloop-dance-party.hexapod :as hexapod]
+            [clj-drone.core :refer :all]))
 
 ;;This is the main file to work on for the live coding
 ;; first comment section is the stuff needed to initially connect to
@@ -49,7 +51,7 @@
   (.modeAsString roomba)
   (.control roomba)
   (.updateSensors roomba) ; returns true if you are connected
-  (.playNote roomba 72 40)
+  (.playNote roomba 69 40)
   (roomba/stop! roomba)
   (roomba/spin-right roomba 0.2)
   (spin-left roomba 0.2)
@@ -75,6 +77,13 @@
   (hexapod/sit-up)
   (hexapod/change-mode :translate-mode)
   (hexapod/up-down 0.5)
+
+
+  ;; drone
+   (drone-initialize)
+   (drone :take-off)
+   (drone :land)
+  
   )
 
 
@@ -83,7 +92,7 @@
 (defonce PORT 4249)
 
 ; start a server and create a client to talk with it
-(def server (osc-server PORT))
+(defonce server (osc-server PORT))
 (def incoming-data (atom {}))
 
 
@@ -105,9 +114,10 @@
                              (println (get @incoming-data "/beat"))
                              (let [beat (get @incoming-data "/beat")]
                                (println (get @incoming-data "/beat"))
-                              ; (sphero/sphero-action sphero beat)
-                              ; (roomba/roomba-action roomba beat)
+                              (sphero/sphero-action sphero beat)
+                              (roomba/roomba-action roomba beat)
                                (hexapod/hexapod-action beat)
+                               (println "hey")
                                )))
 
 (osc-handle server "/amp" (fn [msg]
@@ -115,7 +125,7 @@
                              (println "In amp " (pr-str @incoming-data))
                              (let [amp (get @incoming-data "/amp")]
                                (println (get @incoming-data "/amp"))
-                               ;(sphero/change-color sphero amp)
+                              (sphero/change-color sphero (* 10 amp))
                                )))
 
 
@@ -125,30 +135,35 @@
 
 (comment
 
-  (sphero/change-sphero-color-channels {:red true :green true :blue true})
+
+  ;; Sphero solo
+  (sphero/change-sphero-color-channels {:red true :green false :blue false})
+  (sphero/change-sphero-color-channels {:red false :green true :blue false})
+  (sphero/change-sphero-color-channels {:red false :green false :blue true})
   (sphero/change-sphero-color-channels {:red true :green false :blue true})
-  (sphero/change-sphero-beat-mod 2)
-  ;(change-sphero-moves (map commands/colour [RED YELLOW BLUE PURPLE]))
-  (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 70) 0)
-                               (commands/roll (sphero/speed->hex 70) 180)])
+
+  (sphero/change-sphero-beat-mod 8)
+  ;;(sphero/change-sphero-moves (map commands/colour [RED YELLOW BLUE PURPLE]))
   (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 0)
                                (commands/roll (sphero/speed->hex 100) 180)])
-  (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 70) 90)
-                               (commands/roll (sphero/speed->hex 70) 270)])
+
   (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 90)
                                (commands/roll (sphero/speed->hex 100) 270)])
-  (sphero/stop! sphero)
 
-  ;;; roomba
+    (sphero/stop! sphero)
+
+  ;;; Rooombo solo
 
 
-  (roomba/change-roomba-beat-mod 4)
+  (roomba/change-roomba-beat-mod 8)
 
-  (roomba/change-roomba-moves [(fn [roomba] (roomba/spin-left roomba (current-amplitude)))
-                               (fn [roomba] (roomba/spin-right roomba (current-amplitude)))])
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/spin-left roomba 0.8))
+                               (fn [roomba] (roomba/spin-right roomba 0.8))])
 
-  (roomba/change-roomba-moves [(fn [roomba] (roomba/forward roomba (current-amplitude)))
-                               (fn [roomba] (roomba/backward roomba (current-amplitude)))])
+
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/forward roomba 0.8))
+                               (fn [roomba] (roomba/backward roomba 0.8))])
+
 
 
   (roomba/stop! roomba)
@@ -156,10 +171,32 @@
   ;;;
 
 
+  ;;; Sphero + Roomba
+
+  (sphero/change-sphero-beat-mod 8)
+  ;(change-sphero-moves (map commands/colour [RED YELLOW BLUE PURPLE]))
+  (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 0)
+                               (commands/roll (sphero/speed->hex 100) 180)])
+
+  (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 90)
+                               (commands/roll (sphero/speed->hex 100) 270)])
+
+  (roomba/change-roomba-beat-mod 8)
+
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/spin-left roomba 0.8))
+                               (fn [roomba] (roomba/spin-right roomba 0.8))])
+
+  (sphero/change-sphero-beat-mod 8)
+  (roomba/change-roomba-beat-mod 8)
+  (roomba/stop! roomba)
+  (sphero/stop! sphero)
+
+
+  ;;;  Hexapod solo
 
   (hexapod/toggle-mode)
-  
-  (hexapod/change-hexapod-beat-mod 4)
+
+  (hexapod/change-hexapod-beat-mod 8)
   (hexapod/change-hexapod-moves [(fn [] )])
 
   (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))])
@@ -178,6 +215,7 @@
 
 
   (hexapod/toggle-mode)
+  @hexapod/current-mode
   (hexapod/change-hexapod-beat-mod 6)
   (hexapod/change-hexapod-moves [(fn [] (dotimes [x 80] (hexapod/walk-forward 75)))
                                  (fn [] (dotimes [x 80] (hexapod/walk-backwards 75)))
@@ -185,6 +223,35 @@
                                  (fn [] (dotimes [x 80] (hexapod/walk-left 75)))
                                  ])
 
+  (hexapod/change-hexapod-moves [(fn [] )])
 
+
+  ;;;;
+
+  ;;; sphero + roomba + hexapod
+
+  (hexapod/toggle-mode)
+
+  (hexapod/change-hexapod-beat-mod 4)
+  (hexapod/change-hexapod-moves [(fn [] (hexapod/up-down 0.5))
+                                 (fn [] (hexapod/wave1 0.5))
+                                 (fn [] (hexapod/wave2 0.5))
+                                 (fn [] (hexapod/wave3 0.5))])
+
+  (roomba/change-roomba-moves [(fn [roomba] (roomba/spin-left roomba 0.8))
+                               (fn [roomba] (roomba/spin-right roomba 0.8))])
+  (sphero/change-sphero-beat-mod 2)
+
+  (sphero/change-sphero-moves [(commands/roll (sphero/speed->hex 100) 0)
+                               (commands/roll (sphero/speed->hex 100) 180)])
+
+
+  ;;; stop everyone
+  (sphero/stop! sphero)
+  (roomba/stop! roomba)
+  (hexapod/change-hexapod-moves [(fn [] )])
+
+
+  ;; drone comes in for the ending!
   )
 

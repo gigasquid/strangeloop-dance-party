@@ -14,7 +14,7 @@ while true
   counter = counter + 1;
   client.send(OSC::Message.new("/beat", counter))
   sleep 0.5
-  client.send(OSC::Message.new("/amp", amplitude))
+  client.send(OSC::Message.new("/amp", rand))
   amplitude = amplitude + 0.1
   amplitude = 0 if amplitude > 1
   sleep 0.5
