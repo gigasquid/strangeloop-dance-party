@@ -5,7 +5,7 @@ dance party
 
 ## Usage
 
-Cider jack into the core.
+Cider jack into the clojure src/core.
 The comment stuff in the top is the initial setup of the robots
 The stuff in the comments on the bottom is what you execute during
 dance time.
